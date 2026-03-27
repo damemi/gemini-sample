@@ -75,6 +75,31 @@
       border: 1px solid rgba(76, 194, 255, 0.25);
     }
     .msg.err { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+    .msg.loading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-height: 2.5rem;
+    }
+    .spinner {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 2px solid rgba(127, 127, 127, 0.35);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: spin 0.65s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation-duration: 1.4s; }
+    }
+    .loading-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
     .row {
       display: flex;
       gap: 0.5rem;
@@ -134,6 +159,15 @@
       addBubble("user", text);
       history.push({ role: "user", content: text });
       sendBtn.disabled = true;
+
+      const modelEl = document.createElement("div");
+      modelEl.className = "msg model loading";
+      modelEl.setAttribute("aria-busy", "true");
+      modelEl.innerHTML =
+        '<span class="spinner" aria-hidden="true"></span><span class="loading-label">Thinking…</span>';
+      logEl.appendChild(modelEl);
+      logEl.scrollTop = logEl.scrollHeight;
+
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
@@ -141,19 +175,31 @@
           body: JSON.stringify({ messages: history }),
         });
         const raw = await res.text();
+        modelEl.classList.remove("loading");
+        modelEl.removeAttribute("aria-busy");
+
         let data;
-        try { data = JSON.parse(raw); } catch { data = null; }
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          data = null;
+        }
         if (!res.ok) {
-          const err = (data && data.reply) || raw || res.statusText;
-          addBubble("model", "Error: " + err, "err");
+          const err =
+            (data && data.reply) || raw.trim() || res.statusText;
+          modelEl.classList.add("err");
+          modelEl.textContent = "Error: " + err;
           history.pop();
           return;
         }
         const reply = data && data.reply ? data.reply : raw;
-        addBubble("model", reply);
+        modelEl.textContent = reply;
         history.push({ role: "model", content: reply });
       } catch (err) {
-        addBubble("model", "Network error: " + err.message, "err");
+        modelEl.classList.remove("loading");
+        modelEl.removeAttribute("aria-busy");
+        modelEl.classList.add("err");
+        modelEl.textContent = "Network error: " + err.message;
         history.pop();
       } finally {
         sendBtn.disabled = false;

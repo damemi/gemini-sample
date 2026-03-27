@@ -11,7 +11,7 @@ import (
 	"google.golang.org/genai"
 )
 
-const defaultModel = "gemini-2.0-flash"
+const defaultModel = "gemini-2.5-flash"
 
 type chatRequest struct {
 	Messages []chatMessage `json:"messages"`
@@ -23,7 +23,7 @@ type chatMessage struct {
 }
 
 func main() {
-	addr := getenv("LISTEN_ADDR", ":8080")
+	addr := getenv("LISTEN_ADDR", ":9090")
 	apiKey := os.Getenv("GEMINI_API_KEY")
 	if apiKey == "" {
 		log.Fatal("GEMINI_API_KEY is required")

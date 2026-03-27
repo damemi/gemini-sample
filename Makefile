@@ -7,18 +7,19 @@ TAG ?= latest
 NS ?=
 KUBECTL = kubectl$(if $(strip $(NS)), -n $(NS),)
 
-.PHONY: help build build-backend build-frontend push push-backend push-frontend deploy secret apply port-forward
+.PHONY: help build build-backend build-frontend push push-backend push-frontend deploy undeploy secret apply port-forward
 
 help:
 	@echo "Targets:"
 	@echo "  make build          - docker build both images"
 	@echo "  make push           - build and push both images"
 	@echo "  make deploy         - Secret from GEMINI_API_KEY, then kubectl apply -f k8s/"
+	@echo "  make undeploy       - kubectl delete -f k8s/ and remove gemini-credentials secret"
 	@echo "  make secret         - Secret only (needs GEMINI_API_KEY)"
 	@echo "  make apply          - kubectl apply -f k8s/ (Secret must already exist)"
-	@echo "  make port-forward   - kubectl port-forward to frontend :3000"
+	@echo "  make port-forward   - kubectl port-forward to frontend :8080"
 	@echo ""
-	@echo "Namespace: omit for default; or NS=my-ns make deploy (same for apply, port-forward)"
+	@echo "Namespace: omit for default; or NS=my-ns make deploy (same for apply, port-forward, undeploy)"
 	@echo ""
 	@echo "Plain kubectl (no make), default namespace, after export GEMINI_API_KEY:"
 	@echo "  kubectl create secret generic gemini-credentials --from-literal=GEMINI_API_KEY=\"\$$GEMINI_API_KEY\" --dry-run=client -o yaml | kubectl apply -f -"
@@ -52,5 +53,9 @@ apply:
 
 deploy: secret apply
 
+undeploy:
+	$(KUBECTL) delete -f k8s/ --ignore-not-found
+	$(KUBECTL) delete secret gemini-credentials --ignore-not-found
+
 port-forward:
-	$(KUBECTL) port-forward svc/gemini-sample-frontend 3000:3000
+	$(KUBECTL) port-forward svc/gemini-sample-frontend 8080:8080

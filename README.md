@@ -91,7 +91,7 @@ make apply
 | Variable | Where | Purpose |
 |----------|--------|---------|
 | `GEMINI_API_KEY` | Secret → backend pod | Gemini API authentication |
-| `GEMINI_MODEL` | `k8s/backend-deployment.yaml` | Model id (default `gemini-2.0-flash`) |
+| `GEMINI_MODEL` | `k8s/backend-deployment.yaml` | Model id (default `gemini-2.5-flash`) |
 | `BACKEND_URL` | Frontend Deployment | In-cluster URL of backend Service (default `http://gemini-sample-backend:8080`) |
 
 ## API shape

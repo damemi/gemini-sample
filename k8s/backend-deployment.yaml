@@ -19,25 +19,27 @@ spec:
           image: docker.io/mikeodigos/gemini-sample-backend:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 8080
+            - containerPort: 9090
           env:
+            - name: LISTEN_ADDR
+              value: ":9090"
             - name: GEMINI_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: gemini-credentials
                   key: GEMINI_API_KEY
             - name: GEMINI_MODEL
-              value: gemini-2.0-flash
+              value: gemini-2.5-flash
           readinessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 9090
             initialDelaySeconds: 2
             periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 8080
+              port: 9090
             initialDelaySeconds: 5
             periodSeconds: 15
           resources:

@@ -11,6 +11,6 @@ RUN adduser -D -u 65532 app
 USER 65532:65532
 WORKDIR /app
 COPY --from=build /gemini-backend ./
-EXPOSE 8080
-ENV LISTEN_ADDR=:8080
+EXPOSE 9090
+ENV LISTEN_ADDR=:9090
 ENTRYPOINT ["/app/gemini-backend"]

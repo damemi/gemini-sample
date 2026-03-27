@@ -10,4 +10,4 @@ push: build
 	docker push $(IMAGE):$(TAG)
 
 run:
-	docker run --rm -e GEMINI_API_KEY -p 8080:8080 $(IMAGE):$(TAG)
+	docker run --rm -e GEMINI_API_KEY -p 9090:9090 $(IMAGE):$(TAG)
