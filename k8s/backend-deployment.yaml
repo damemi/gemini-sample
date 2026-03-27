@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemini-sample-backend
+  labels:
+    app: gemini-sample-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gemini-sample-backend
+  template:
+    metadata:
+      labels:
+        app: gemini-sample-backend
+    spec:
+      containers:
+        - name: backend
+          image: docker.io/mikeodigos/gemini-sample-backend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-credentials
+                  key: GEMINI_API_KEY
+            - name: GEMINI_MODEL
+              value: gemini-2.0-flash
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

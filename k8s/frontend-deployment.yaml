@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemini-sample-frontend
+  labels:
+    app: gemini-sample-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gemini-sample-frontend
+  template:
+    metadata:
+      labels:
+        app: gemini-sample-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: docker.io/mikeodigos/gemini-sample-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: BACKEND_URL
+              value: http://gemini-sample-backend:8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi

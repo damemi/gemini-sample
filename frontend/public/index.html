@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gemini demo chat</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e7ecf3;
+      --muted: #8b9cb3;
+      --accent: #4cc2ff;
+      --user: #2d3d52;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f6f9;
+        --panel: #fff;
+        --text: #1a1f26;
+        --muted: #5c6b7a;
+        --accent: #0066cc;
+        --user: #dbe8f7;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.25rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.25rem;
+    }
+    .sub { color: var(--muted); font-size: 0.875rem; margin-bottom: 1rem; }
+    #log {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid rgba(127, 127, 127, 0.2);
+      min-height: 280px;
+    }
+    .msg {
+      max-width: 92%;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      margin-bottom: 0.65rem;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .msg.user {
+      margin-left: auto;
+      background: var(--user);
+    }
+    .msg.model {
+      margin-right: auto;
+      background: rgba(76, 194, 255, 0.12);
+      border: 1px solid rgba(76, 194, 255, 0.25);
+    }
+    .msg.err { color: #f87171; border-color: rgba(248, 113, 113, 0.4); }
+    .row {
+      display: flex;
+      gap: 0.5rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(127, 127, 127, 0.35);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.75rem 1.1rem;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: #0a0e12;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Gemini demo chat</h1>
+    <p class="sub">Messages go to your cluster backend, which calls the Gemini API.</p>
+    <div id="log"></div>
+    <form class="row" id="f">
+      <input type="text" id="t" placeholder="Type a message…" autocomplete="off" />
+      <button type="submit" id="send">Send</button>
+    </form>
+  </div>
+  <script>
+    const logEl = document.getElementById("log");
+    const form = document.getElementById("f");
+    const input = document.getElementById("t");
+    const sendBtn = document.getElementById("send");
+
+    const history = [];
+
+    function addBubble(role, text, cls) {
+      const d = document.createElement("div");
+      d.className = "msg " + role + (cls ? " " + cls : "");
+      d.textContent = text;
+      logEl.appendChild(d);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      addBubble("user", text);
+      history.push({ role: "user", content: text });
+      sendBtn.disabled = true;
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: history }),
+        });
+        const raw = await res.text();
+        let data;
+        try { data = JSON.parse(raw); } catch { data = null; }
+        if (!res.ok) {
+          const err = (data && data.reply) || raw || res.statusText;
+          addBubble("model", "Error: " + err, "err");
+          history.pop();
+          return;
+        }
+        const reply = data && data.reply ? data.reply : raw;
+        addBubble("model", reply);
+        history.push({ role: "model", content: reply });
+      } catch (err) {
+        addBubble("model", "Network error: " + err.message, "err");
+        history.pop();
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    });
+    input.focus();
+  </script>
+</body>
+</html>
